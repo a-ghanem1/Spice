@@ -25,6 +25,24 @@ namespace Spice.Areas.Admin.Controllers
             return View(await _db.Category.ToListAsync());
         }
 
+        // GET - Edit
+        public async Task<IActionResult> Details(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var category = await _db.Category.FindAsync(id);
+
+            if (category == null)
+            {
+                return NotFound();
+            }
+
+            return View(category);
+        }
+
         // GET - Create
         public IActionResult Create()
         {
