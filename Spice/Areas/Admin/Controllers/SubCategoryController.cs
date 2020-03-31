@@ -184,11 +184,6 @@ namespace Spice.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
             var subCategory = await _db.SubCategory.SingleOrDefaultAsync(m => m.Id == id);
 
             _db.SubCategory.Remove(subCategory);
