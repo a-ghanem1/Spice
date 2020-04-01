@@ -20,7 +20,6 @@
         {
             <table class="table table-hover">
                 <tr class="table-info">
-                    <th style="width: 10%">#</th>
                     <th>
                         @Html.DisplayNameFor(m => m.Name)
                     </th>
@@ -28,14 +27,10 @@
                         @Html.DisplayNameFor(m => m.Email)
                     </th>
                     <th></th>
-                    <th></th>
                 </tr>
                 @foreach (var user in Model)
                 {
             <tr>
-                <td>
-                    @Html.DisplayFor(m => user.Id)
-                </td>
                 <td>
                     @Html.DisplayFor(m => user.Name)
                 </td>
