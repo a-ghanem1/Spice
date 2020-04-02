@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spice.Data;
@@ -55,7 +56,25 @@ namespace Spice.Areas.Customer.Controllers
 
             DetailCart.OrderHeader.OrderTotalOriginal = DetailCart.OrderHeader.OrderTotal;
 
+            if (HttpContext.Session.GetString(SD.ssCouponCode) != null)
+            {
+                DetailCart.OrderHeader.CouponCode = HttpContext.Session.GetString(SD.ssCouponCode);
+                var couponFromDb = await _db.Coupon.Where(c => c.Name.ToLower() == DetailCart.OrderHeader.CouponCode.ToLower()).FirstOrDefaultAsync();
+                DetailCart.OrderHeader.OrderTotal = SD.DiscountedPrice(couponFromDb, DetailCart.OrderHeader.OrderTotalOriginal);
+            }
+
             return View(DetailCart);
+        }
+
+        public IActionResult AddCoupon()
+        {
+            if (DetailCart.OrderHeader.CouponCode == null)
+            {
+                DetailCart.OrderHeader.CouponCode = "";
+            }
+            HttpContext.Session.SetString(SD.ssCouponCode, DetailCart.OrderHeader.CouponCode);
+
+            return RedirectToAction(nameof(Index));
         }
     }
 }
