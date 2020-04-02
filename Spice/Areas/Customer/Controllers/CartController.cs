@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spice.Data;
+using Spice.Models;
 using Spice.Utility;
 using Spice.ViewModels;
 
@@ -30,6 +31,45 @@ namespace Spice.Areas.Customer.Controllers
             DetailCart = new OrderDetailsCart() 
             { 
                 OrderHeader= new Models.OrderHeader()
+            };
+
+            DetailCart.OrderHeader.OrderTotal = 0;
+
+            var claimsIdentity = (ClaimsIdentity)User.Identity;
+            var claim = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
+            var applicationUser = await _db.User.Where(c => c.Id == claim.Value).FirstOrDefaultAsync();
+
+            var cart = _db.ShoppingCart.Where(c => c.ApplicationUserId == claim.Value);
+            if (cart != null)
+            {
+                DetailCart.CartList = cart.ToList();
+            }
+
+            foreach (var list in DetailCart.CartList)
+            {
+                list.MenuItem = await _db.MenuItem.FirstOrDefaultAsync(m => m.Id == list.MenuItemId);
+                DetailCart.OrderHeader.OrderTotal = DetailCart.OrderHeader.OrderTotal + (list.MenuItem.Price * list.Count);
+            }
+
+            DetailCart.OrderHeader.OrderTotalOriginal = DetailCart.OrderHeader.OrderTotal;
+            DetailCart.OrderHeader.PickupName = applicationUser.Name;
+            DetailCart.OrderHeader.PickupTime = DateTime.Now;
+
+            if (HttpContext.Session.GetString(SD.ssCouponCode) != null)
+            {
+                DetailCart.OrderHeader.CouponCode = HttpContext.Session.GetString(SD.ssCouponCode);
+                var couponFromDb = await _db.Coupon.Where(c => c.Name.ToLower() == DetailCart.OrderHeader.CouponCode.ToLower()).FirstOrDefaultAsync();
+                DetailCart.OrderHeader.OrderTotal = SD.DiscountedPrice(couponFromDb, DetailCart.OrderHeader.OrderTotalOriginal);
+            }
+
+            return View(DetailCart);
+        }
+
+        public async Task<IActionResult> Summary()
+        {
+            DetailCart = new OrderDetailsCart()
+            {
+                OrderHeader = new Models.OrderHeader()
             };
 
             DetailCart.OrderHeader.OrderTotal = 0;
