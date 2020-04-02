@@ -12,6 +12,8 @@ using Spice.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Spice.Utility;
+using Stripe;
 
 namespace Spice
 {
@@ -35,6 +37,8 @@ namespace Spice
                 .AddDefaultTokenProviders()
                 .AddDefaultUI()
                 .AddEntityFrameworkStores<ApplicationDbContext>();
+
+            services.Configure<StripeSettings>(Configuration.GetSection("Stripe"));
 
             services.AddSession(options => {
                 options.Cookie.IsEssential = true;
@@ -66,6 +70,8 @@ namespace Spice
 
             app.UseRouting();
             app.UseSession();
+
+            StripeConfiguration.ApiKey = Configuration.GetSection("Stripe")["SecretKey"];
 
             app.UseAuthentication();
             app.UseAuthorization();
