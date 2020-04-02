@@ -15,6 +15,9 @@ namespace Spice.Data
         public DbSet<Coupon> Coupon { get; set; }
         public DbSet<ApplicationUser> User { get; set; }
         public DbSet<ShoppingCart> ShoppingCart { get; set; }
+        public DbSet<OrderHeader> OrderHeader { get; set; }
+        public DbSet<OrderDetails> OrderDetails { get; set; }
+
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {
