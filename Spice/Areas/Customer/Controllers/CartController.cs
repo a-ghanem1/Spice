@@ -110,7 +110,7 @@ namespace Spice.Areas.Customer.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [ActionName("Summary")]
-        public async Task<IActionResult> SummaryPost(string stripeToken)
+        public async Task<IActionResult> SummaryPost(string stripeEmail, string stripeToken)
         {
             var claimsIdentity = (ClaimsIdentity)User.Identity;
             var claim = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
@@ -127,7 +127,7 @@ namespace Spice.Areas.Customer.Controllers
             List<OrderDetails> orderDetailsList = new List<OrderDetails>();
             _db.OrderHeader.Add(DetailCart.OrderHeader);
             await _db.SaveChangesAsync();
-            
+
             DetailCart.OrderHeader.OrderTotalOriginal = 0;
 
 
@@ -164,30 +164,40 @@ namespace Spice.Areas.Customer.Controllers
             HttpContext.Session.SetInt32(SD.ssShoppingCartCount, 0);
             await _db.SaveChangesAsync();
 
-            var options = new ChargeCreateOptions()
-            {
-                Amount = Convert.ToInt32(DetailCart.OrderHeader.OrderTotal * 100),
-                Currency = "usd",
-                Description = "Order ID: " + DetailCart.OrderHeader.Id,
-                Source = stripeToken
-            };
+            //Stripe Logic
 
-            var service = new ChargeService();
-            Charge charge = service.Create(options);
+            if (stripeToken != null)
+            {
+                var customers = new CustomerService();
+                var charges = new ChargeService();
 
-            if (charge.BalanceTransactionId == null)
-            {
-                DetailCart.OrderHeader.PaymentStatus = SD.PaymentStatusRejected;
-            }
-            else
-            {
+                var customer = customers.Create(new CustomerCreateOptions
+                {
+                    Email = stripeEmail,
+                    Source = stripeToken
+                });
+
+                var charge = charges.Create(new ChargeCreateOptions
+                {
+                    Amount = Convert.ToInt32(DetailCart.OrderHeader.OrderTotal * 100),
+                    Description = "Order ID : " + DetailCart.OrderHeader.Id,
+                    Currency = "usd",
+                    Customer = customer.Id
+                });
+
                 DetailCart.OrderHeader.TransactionId = charge.BalanceTransactionId;
-            }
+                if (charge.Status.ToLower() == "succeeded")
+                {
+                    //email for successful order
 
-            if (charge.Status.ToLower() == "succeeded")
-            {
-                DetailCart.OrderHeader.PaymentStatus = SD.PaymentStatusApproved;
-                DetailCart.OrderHeader.Status = SD.PaymentStatusApproved;
+                    DetailCart.OrderHeader.PaymentStatus = SD.PaymentStatusApproved;
+                    DetailCart.OrderHeader.Status = SD.StatusSubmitted;
+                }
+                else
+                {
+                    DetailCart.OrderHeader.PaymentStatus = SD.PaymentStatusRejected;
+                }
+
             }
             else
             {

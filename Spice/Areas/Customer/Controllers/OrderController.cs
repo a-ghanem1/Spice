@@ -96,5 +96,10 @@ namespace Spice.Areas.Customer.Controllers
 
             return PartialView("_IndividualOrderDetails", orderDetailsVm);
         }
+
+        public IActionResult GetOrderStatus(int id)
+        {
+            return PartialView("_OrderStatus", _db.OrderHeader.Where(m => m.Id == id).FirstOrDefault().Status);
+        }
     }
 }
