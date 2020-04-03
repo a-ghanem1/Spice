@@ -46,6 +46,7 @@ namespace Spice
                 options.AppSecret = "862462ce38c9ac19ddfba36850ac622d";
             });
 
+            services.AddScoped<IDbInitializer, DbInitializer>();
             services.Configure<StripeSettings>(Configuration.GetSection("Stripe"));
             services.AddSingleton<IEmailSender, EmailSender>();
             services.Configure<EmailOptions>(Configuration);
@@ -62,7 +63,7 @@ namespace Spice
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IDbInitializer dbIntiailizer)
         {
             if (env.IsDevelopment())
             {
@@ -82,7 +83,7 @@ namespace Spice
             app.UseSession();
 
             StripeConfiguration.ApiKey = Configuration.GetSection("Stripe")["SecretKey"];
-
+            dbIntiailizer.Initialize();
             app.UseAuthentication();
             app.UseAuthorization();
 
