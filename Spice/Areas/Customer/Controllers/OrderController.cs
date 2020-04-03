@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spice.Data;
+using Spice.Models;
 using Spice.ViewModels;
 
 namespace Spice.Areas.Customer.Controllers
@@ -39,6 +40,43 @@ namespace Spice.Areas.Customer.Controllers
             };
 
             return View(orderDetailsViewModel);
+        }
+
+        [Authorize]
+        public async Task<IActionResult> OrderHistory()
+        {
+            var claimsIdentity = (ClaimsIdentity)User.Identity;
+            var claim = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
+
+            List<OrderDetailsViewModel> orderList = new List<OrderDetailsViewModel>();
+
+            List<OrderHeader> orderHeaderList = await _db.OrderHeader.Include(o => o.ApplicationUser).Where(u => u.UserId == claim.Value).ToListAsync();
+
+            foreach (var item in orderHeaderList)
+            {
+                OrderDetailsViewModel individual = new OrderDetailsViewModel()
+                {
+                    OrderHeader = item,
+                    OrderDetails = await _db.OrderDetails.Where(o => o.OrderId == item.Id).ToListAsync()
+                };
+
+                orderList.Add(individual);
+            }
+
+            return View(orderList);
+        }
+
+        public async Task<IActionResult> GetOrderDetails(int id)
+        {
+            OrderDetailsViewModel orderDetailsVm = new OrderDetailsViewModel()
+            {
+                OrderHeader = await _db.OrderHeader.FirstOrDefaultAsync(m => m.Id == id),
+                OrderDetails = await _db.OrderDetails.Where(m => m.OrderId == id).ToListAsync()
+            };
+
+            orderDetailsVm.OrderHeader.ApplicationUser = await _db.User.FirstOrDefaultAsync(u => u.Id == orderDetailsVm.OrderHeader.UserId);
+
+            return PartialView("_IndividualOrderDetails", orderDetailsVm);
         }
     }
 }
