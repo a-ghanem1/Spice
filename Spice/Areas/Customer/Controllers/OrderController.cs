@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Spice.Data;
 using Spice.Models;
+using Spice.Utility;
 using Spice.ViewModels;
 
 namespace Spice.Areas.Customer.Controllers
@@ -82,6 +83,30 @@ namespace Spice.Areas.Customer.Controllers
             };
 
             return View(orderListVm);
+        }
+
+        [Authorize(Roles = SD.KitchenUser + "," + SD.ManagerUser)]
+        public async Task<IActionResult> ManageOrder()
+        {
+            List<OrderDetailsViewModel> orderDetailsVm = new List<OrderDetailsViewModel>();
+
+            List<OrderHeader> orderHeaderList = await _db.OrderHeader
+                                .Where(o => o.Status == SD.StatusSubmitted || o.Status == SD.StatusInProcess)
+                                .OrderByDescending(o => o.PickupTime)
+                                .ToListAsync();
+
+            foreach (var item in orderHeaderList)
+            {
+                OrderDetailsViewModel individual = new OrderDetailsViewModel()
+                {
+                    OrderHeader = item,
+                    OrderDetails = await _db.OrderDetails.Where(o => o.OrderId == item.Id).ToListAsync()
+                };
+
+                orderDetailsVm.Add(individual);
+            }
+
+            return View(orderDetailsVm.OrderBy(o => o.OrderHeader.PickupTime).ToList());
         }
 
         public async Task<IActionResult> GetOrderDetails(int id)
