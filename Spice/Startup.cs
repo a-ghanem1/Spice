@@ -14,6 +14,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Spice.Utility;
 using Stripe;
+using Spice.Sevices;
+using Microsoft.AspNetCore.Identity.UI.Services;
 
 namespace Spice
 {
@@ -45,6 +47,8 @@ namespace Spice
             });
 
             services.Configure<StripeSettings>(Configuration.GetSection("Stripe"));
+            services.AddSingleton<IEmailSender, EmailSender>();
+            services.Configure<EmailOptions>(Configuration);
 
             services.AddSession(options => {
                 options.Cookie.IsEssential = true;
