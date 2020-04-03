@@ -38,6 +38,12 @@ namespace Spice
                 .AddDefaultUI()
                 .AddEntityFrameworkStores<ApplicationDbContext>();
 
+            services.AddAuthentication().AddFacebook(options =>
+            {
+                options.AppId = "145360736912172";
+                options.AppSecret = "862462ce38c9ac19ddfba36850ac622d";
+            });
+
             services.Configure<StripeSettings>(Configuration.GetSection("Stripe"));
 
             services.AddSession(options => {
